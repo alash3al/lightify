@@ -34,11 +34,20 @@ func main() {
 	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
 
-	fwd, _ := forward.New(forward.PassHostHeader(true))
-	reverseProxy := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		req.URL, _ = url.Parse(*flagUpstream)
+	forwarder := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		var err error
+		req.URL, err = url.Parse(*flagUpstream)
+		if err != nil {
+			http.Error(w, "Internal Server Error", 500)
+			return
+		}
+		fwd, err := forward.New(forward.PassHostHeader(true))
+		if err != nil {
+			http.Error(w, "Internal Server Error", 500)
+			return
+		}
 		fwd.ServeHTTP(w, req)
 	})
 
-	log.Fatal(http.ListenAndServe(*flagHTTPAddr, m.Middleware(reverseProxy)))
+	log.Fatal(http.ListenAndServe(*flagHTTPAddr, m.Middleware(forwarder)))
 }
