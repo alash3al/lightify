@@ -15,14 +15,3 @@ Download
 ========
 - Docker `$ docker run --network=host alash3al/lightify --upstream="http://localhost:8080"`
 - Binaries go to [releases page](https://github.com/alash3al/lightify/releases)
-
-Usage
-======
-**Docker**
-```bash
-# move your current webserver "nginx/apache ... etc" from port "80" to i.e "8080"
-# let lightify listen on port 80 and forward the trafic to the 8080 like this:
-$ docker run --network=host alash3al/lightify --upstream="http://localhost:8080"
-```
-
-**Binaries**

@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -125,7 +124,6 @@ func main() {
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
-			w.Header.Set("Content-Length", strconv.Itoa(len([]rune(html))))
 
 			return nil
 		}))
