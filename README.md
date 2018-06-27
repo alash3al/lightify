@@ -7,7 +7,7 @@ Features
 - Simple &amp; Stupid
 - Minify `css, js, html, xml, json`
 - Gzip each minified file
-- Portable
+- Combine and inline self-hosted `css, js` on the fly!
 - Supports any http upstream.
 
 Usage
