@@ -15,3 +15,15 @@ Download
 ========
 - Docker `$ docker run --network=host alash3al/lightify --upstream="http://localhost:8080"`
 - Binaries go to [releases page](https://github.com/alash3al/lightify/releases)
+
+Credits
+========
+Mohamed Al Ashaal, a Gopher ;)
+
+License
+========
+MIT License
+
+Contribution
+=============
+The door is always open ;)
