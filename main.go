@@ -106,37 +106,20 @@ func main() {
 							d = strings.Replace(d, "@import("+val[2]+")", "@import("+newURL+")", -1)
 						}
 					}
-					// bundleCSS += d
 					s.ReplaceWithHtml("<!-- inline(" + (dst) + ") --><style>" + (d) + "</style>")
 				}
 			})
 
-			// bundleJS := ""
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
 					return
 				}
 				dst = fixURL(dst, w.Request.Host)
-				// u, err := url.Parse(dst)
-				// if err != nil {
-				// 	return
-				// }
-				// if u.Host != w.Request.Host {
-				// 	return
-				// }
 				if d := fetch(dst); d != "" {
 					s.ReplaceWithHtml("<script>" + (d) + "</script>")
 				}
 			})
-
-			// if bundleCSS != "" {
-			// 	doc.Find("head").AppendHtml("<style>" + (bundleCSS) + "</style>")
-			// }
-
-			// if bundleJS != "" {
-			// 	doc.Find("body").AppendHtml("<script>" + (bundleJS) + "</script>")
-			// }
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
