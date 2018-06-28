@@ -75,7 +75,7 @@ func main() {
 
 			w.Body = ioutil.NopCloser(io.MultiReader(bytes.NewBuffer(chunk), w.Body))
 
-			if !*flagCombine || strings.ToLower(http.DetectContentType(chunk)) != "text/html" /*!strings.Contains(strings.ToLower(w.Header.Get("Content-Type")), "text/html")*/ {
+			if !*flagCombine || !strings.Contains(strings.ToLower(http.DetectContentType(chunk)), "text/html") {
 				return nil
 			}
 
