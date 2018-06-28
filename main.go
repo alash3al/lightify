@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"compress/gzip"
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -42,10 +44,10 @@ func main() {
 	m.AddFunc("text/html", html.Minify)
 	m.AddFunc("text/javascript", js.Minify)
 	m.AddFunc("image/svg+xml", svg.Minify)
-	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
+	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 
-	cssUrls := regexp.MustCompile(`(url|\@import)\((.*?)\)`)
+	cssURLs := regexp.MustCompile(`(url|\@import)\((.*?)\)`)
 
 	forwarder := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var err error
@@ -68,13 +70,18 @@ func main() {
 				w.Header.Del("Content-Encoding")
 			}
 
-			if !*flagCombine || !strings.Contains(strings.ToLower(w.Header.Get("Content-Type")), "text/html") {
+			chunk := make([]byte, 512)
+			w.Body.Read(chunk)
+
+			w.Body = ioutil.NopCloser(io.MultiReader(bytes.NewBuffer(chunk), w.Body))
+
+			if !*flagCombine || strings.ToLower(http.DetectContentType(chunk)) != "text/html" /*!strings.Contains(strings.ToLower(w.Header.Get("Content-Type")), "text/html")*/ {
 				return nil
 			}
 
 			doc, err := goquery.NewDocumentFromReader(w.Body)
 			if err != nil {
-				return err
+				return nil
 			}
 
 			// bundleCSS := ""
@@ -92,7 +99,7 @@ func main() {
 					return
 				}
 				if d := fetch(dst); d != "" {
-					for _, val := range cssUrls.FindAllStringSubmatch(d, -1) {
+					for _, val := range cssURLs.FindAllStringSubmatch(d, -1) {
 						newURL := strings.Trim(val[2], `"'`)
 						if !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
 							newURL = "//" + u.Host + path.Join("/", path.Dir(u.Path), newURL) + "?" + u.RawQuery
