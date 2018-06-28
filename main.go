@@ -84,7 +84,6 @@ func main() {
 				return nil
 			}
 
-			// bundleCSS := ""
 			doc.Find("link").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("href", "")
 				if dst == "" {
