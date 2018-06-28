@@ -91,9 +91,6 @@ func main() {
 				if err != nil {
 					return
 				}
-				// if u.Host != w.Request.Host {
-				// 	return
-				// }
 				if d := fetch(dst); d != "" {
 					for _, val := range cssUrls.FindAllStringSubmatch(d, -1) {
 						newURL := strings.Trim(val[2], `"'`)
@@ -121,15 +118,14 @@ func main() {
 					return
 				}
 				dst = fixURL(dst, w.Request.Host)
-				u, err := url.Parse(dst)
-				if err != nil {
-					return
-				}
-				if u.Host != w.Request.Host {
-					return
-				}
+				// u, err := url.Parse(dst)
+				// if err != nil {
+				// 	return
+				// }
+				// if u.Host != w.Request.Host {
+				// 	return
+				// }
 				if d := fetch(dst); d != "" {
-					// bundleJS += js
 					s.ReplaceWithHtml("<script>" + (d) + "</script>")
 				}
 			})
