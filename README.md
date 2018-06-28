@@ -8,6 +8,7 @@ Features
 - Minify `css, js, html, xml, json`.
 - Gzip each minified file.
 - Combine and inline self-hosted `css, js` on the fly!
+- Automatically fixes internal relative css imports!
 - Supports any http upstream.
 - Portable, no dependancies.
 
