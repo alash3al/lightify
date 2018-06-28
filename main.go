@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 
@@ -44,6 +45,8 @@ func main() {
 	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
 	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
 
+	cssUrls := regexp.MustCompile(`(url|\@import)\((.*?)\)`)
+
 	forwarder := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var err error
 
@@ -74,27 +77,44 @@ func main() {
 				return err
 			}
 
-			bundleCSS := ""
+			// bundleCSS := ""
 			doc.Find("link").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("href", "")
 				if dst == "" {
 					return
 				}
+				if s.AttrOr("rel", "") != "stylesheet" {
+					return
+				}
 				dst = fixURL(dst, w.Request.Host)
 				u, err := url.Parse(dst)
-				if err != nil || !strings.HasSuffix(u.Path, "css") {
+				if err != nil {
 					return
 				}
-				if u.Host != w.Request.Host {
-					return
-				}
+				// if u.Host != w.Request.Host {
+				// 	return
+				// }
 				if d := fetch(dst); d != "" {
-					bundleCSS += d
-					s.Remove()
+					for _, val := range cssUrls.FindAllStringSubmatch(d, -1) {
+						newURL := strings.Trim(val[2], `"'`)
+						if !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
+							newURL = "//" + u.Host + path.Join("/", path.Dir(u.Path), newURL) + "?" + u.RawQuery
+						}
+						if val[2] == newURL {
+							continue
+						}
+						if val[1] == "url" {
+							d = strings.Replace(d, "url("+val[2]+")", "url("+newURL+")", -1)
+						} else if val[1] == "@import" {
+							d = strings.Replace(d, "@import("+val[2]+")", "@import("+newURL+")", -1)
+						}
+					}
+					// bundleCSS += d
+					s.ReplaceWithHtml("<!-- inline(" + (dst) + ") --><style>" + (d) + "</style>")
 				}
 			})
 
-			bundleJS := ""
+			// bundleJS := ""
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
@@ -108,19 +128,19 @@ func main() {
 				if u.Host != w.Request.Host {
 					return
 				}
-				if js := fetch(dst); js != "" {
-					bundleJS += js
-					s.Remove()
+				if d := fetch(dst); d != "" {
+					// bundleJS += js
+					s.ReplaceWithHtml("<script>" + (d) + "</script>")
 				}
 			})
 
-			if bundleCSS != "" {
-				doc.Find("head").AppendHtml("<style>" + (bundleCSS) + "</style>")
-			}
+			// if bundleCSS != "" {
+			// 	doc.Find("head").AppendHtml("<style>" + (bundleCSS) + "</style>")
+			// }
 
-			if bundleJS != "" {
-				doc.Find("body").AppendHtml("<script>" + (bundleJS) + "</script>")
-			}
+			// if bundleJS != "" {
+			// 	doc.Find("body").AppendHtml("<script>" + (bundleJS) + "</script>")
+			// }
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
