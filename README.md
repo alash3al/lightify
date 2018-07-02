@@ -14,8 +14,21 @@ Features
 
 Download
 ========
-- Docker `$ docker run --network=host alash3al/lightify --upstream="http://localhost:8080"`
+- Docker `$ docker pull alash3al/lightify`
 - Binaries go to [releases page](https://github.com/alash3al/lightify/releases)
+- From Source `go get github.com/alash3al/lightify`
+
+Usage
+======
+- Docker `$ docker run --network=host alash3al/lightify --upstream="http://localhost:8080"`
+- Binaries `./lightify -http :80 -upstream http://localhost:8080`
+- From Source `lightify -http :80 -upstream http://localhost:8080`
+
+Help
+====
+- Docker `$ docker run alash3al/lightify --help`
+- Binaries `./lightify --help`
+- From Source `lightify --help`
 
 Credits
 ========
