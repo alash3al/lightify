@@ -1,6 +1,6 @@
 Lightify
 =========
-> Let's minify &amp; compress &amp; combine static files on the fly.
+> Let's minify, compress &amp; combine static files on the fly.
 
 ![](http://preview.ibb.co/nkCgpy/36283128_1069026009937885_5431723196539731968_o_1.jpg)
 
