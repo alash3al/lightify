@@ -142,10 +142,10 @@ func main() {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
 					rawScripts += ";" + s.Text()
-					return
+				} else {
+					dst = fixURL(dst, w.Request.Host)
+					scripts = append(scripts, dst)
 				}
-				dst = fixURL(dst, w.Request.Host)
-				scripts = append(scripts, dst)
 				s.Remove()
 			})
 
