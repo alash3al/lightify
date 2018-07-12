@@ -149,7 +149,7 @@ func main() {
 
 			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
 
-			doc.AppendHtml(`<script>function __lightifingJS(e){for(var n in e){var c=e[n],i=document.createElement("script");i.src=c,i.onload=function(){loadScripts(e.slice(n+1))},document.querySelector("body").appendChild(i)}}; __lightifingJS(` + (srcs) + `);</script>`)
+			doc.AppendHtml(`<script defer>function __lightifingJS(e){for(var n in e){var c=e[n],i=document.createElement("script");i.src=c,i.onload=function(){loadScripts(e.slice(n+1))},document.querySelector("body").appendChild(i)}}; __lightifingJS(` + (srcs) + `);</script>`)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
