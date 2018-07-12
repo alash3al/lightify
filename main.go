@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -141,7 +142,7 @@ func main() {
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
-					rawScripts += s.Text() + ";"
+					rawScripts += s.Contents().Text() + ";"
 				} else {
 					dst = fixURL(dst, w.Request.Host)
 					scripts = append(scripts, dst)
@@ -149,27 +150,25 @@ func main() {
 				s.Remove()
 			})
 
+			scripts = append(scripts, "data:text/javascript;base64,"+base64.StdEncoding.EncodeToString([]byte(rawScripts)))
+
 			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
 
 			doc.AppendHtml(`
-				function __lightifingJS(srcs, finalscriptFn) {
-					if ( srcs.length < 1 ) {
-						var script = document.createElement("script");
-						script.innerText = finalscriptFn()
-						document.querySelector("body").appendChild(script)
-						return
+				<script defer>
+					function __lightifingJS(srcs) {
+						for ( var index in srcs ) {
+							var src = srcs[index];
+							var script = document.createElement("script");
+							script.src = src;
+							script.onload = function(){
+								__lightifingJS(srcs.slice(index+1));
+							};
+							document.querySelector("body").appendChild(script);
+						}
 					}
-					for ( var index in srcs ) {
-						var src = srcs[index];
-						var script = document.createElement("script");
-						script.src = src;
-						script.onload = function(){
-							loadScripts(srcs.slice(index+1), raw);
-						};
-						document.querySelector("body").appendChild(script);
-					}
-				}
-				__lightifingJS(` + (srcs) + `, (function(){` + (rawScripts) + `;}));</script>
+					__lightifingJS(` + (srcs) + `);
+				</script>
 			`)
 
 			html, _ := doc.Html()
