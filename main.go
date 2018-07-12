@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"flag"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -129,9 +130,11 @@ func main() {
 							d = strings.Replace(d, "@import("+val[2]+")", "@import("+newURL+")", -1)
 						}
 					}
-					s.ReplaceWithHtml("<!-- inline(" + (dst) + ") --><style>" + (d) + "</style>")
+					s.ReplaceWithHtml("<style>" + (d) + "</style>")
 				}
 			})
+
+			scripts := []string{}
 
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
@@ -139,10 +142,34 @@ func main() {
 					return
 				}
 				dst = fixURL(dst, w.Request.Host)
-				if d := fetch(dst); d != "" {
-					s.ReplaceWithHtml("<script>" + (d) + "</script>")
-				}
+				scripts = append(scripts, dst)
+				s.Remove()
+				// if d := fetch(dst); d != "" {
+				// s.ReplaceWithHtml()
+				// }
 			})
+
+			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
+
+			doc.AppendHtml(`
+				<script>
+					function __lightifingJS(srcs) {
+						for ( var index in srcs ) {
+							var src = srcs[index]
+							var script = document.createElement("script")
+							script.src = src
+							script.onload = function(){
+								loadScripts(srcs.slice(index+1))
+							}
+							document.querySelector("body").appendChild(script)
+						}
+					}
+					
+					__lightifingJS(` + (srcs) + `)
+				</script>
+			`)
+
+			fmt.Println(srcs)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
