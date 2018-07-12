@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/base64"
 	"flag"
 	"io"
 	"io/ioutil"
@@ -102,7 +101,8 @@ func main() {
 				return nil
 			}
 
-			if !*flagCombine {
+			if *flagCombine {
+				// bundle css
 				doc.Find("link").Each(func(_ int, s *goquery.Selection) {
 					dst := s.AttrOr("href", "")
 					if dst == "" {
@@ -134,44 +134,28 @@ func main() {
 						s.ReplaceWithHtml("<style>" + (d) + "</style>")
 					}
 				})
-			}
 
-			scripts := []string{}
-			rawScripts := ""
-
-			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
-				dst := s.AttrOr("src", "")
-				if dst == "" {
-					rawScripts += s.Contents().Text() + "\n"
-				} else {
-					dst = fixURL(dst, w.Request.Host)
-					scripts = append(scripts, dst)
-				}
-				s.Remove()
-			})
-
-			scripts = append(scripts, "data:text/javascript;base64,"+base64.StdEncoding.EncodeToString([]byte(rawScripts)))
-
-			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
-
-			doc.AppendHtml(`
-				<script defer>
-					function __lightifingJS(srcs) {
-						for ( var index in srcs ) {
-							var src = srcs[index];
-							console.log("Loading: "+src)
-							var script = document.createElement("script");
-							script.src = src;
-							script.onload = function(){
-								console.log("Loaded: "+src)
-								__lightifingJS(srcs.slice(index+1));
-							};
-							document.querySelector("body").appendChild(script);
-						}
+				// bundleJS
+				doc.Find("script").Each(func(_ int, s *goquery.Selection) {
+					dst := s.AttrOr("src", "")
+					if dst == "" {
+						return
 					}
-					__lightifingJS(` + (srcs) + `);
-				</script>
-			`)
+					dst = fixURL(dst, w.Request.Host)
+					// u, err := url.Parse(dst)
+					// if err != nil {
+					// 	return
+					// }
+					// if u.Host != w.Request.Host {
+					// 	return
+					// }
+					if d := fetch(dst); d != "" {
+						s.RemoveAttr("src")
+						s.SetText(d)
+						// s.ReplaceWithHtml("<script>" + (d) + "</script>")
+					}
+				})
+			}
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
