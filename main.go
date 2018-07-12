@@ -136,10 +136,12 @@ func main() {
 			}
 
 			scripts := []string{}
+			rawScripts := ""
 
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
+					rawScripts += ";" + s.Text()
 					return
 				}
 				dst = fixURL(dst, w.Request.Host)
@@ -150,6 +152,7 @@ func main() {
 			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
 
 			doc.AppendHtml(`<script defer>function __lightifingJS(e){for(var n in e){var c=e[n],i=document.createElement("script");i.src=c,i.onload=function(){loadScripts(e.slice(n+1))},document.querySelector("body").appendChild(i)}}; __lightifingJS(` + (srcs) + `);</script>`)
+			doc.AppendHtml(`<script defer>` + (rawScripts) + `</script>`)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
