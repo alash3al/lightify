@@ -159,9 +159,11 @@ func main() {
 					function __lightifingJS(srcs) {
 						for ( var index in srcs ) {
 							var src = srcs[index];
+							console.log("Loading: "+src)
 							var script = document.createElement("script");
 							script.src = src;
 							script.onload = function(){
+								console.log("Loaded: "+src)
 								__lightifingJS(srcs.slice(index+1));
 							};
 							document.querySelector("body").appendChild(script);
