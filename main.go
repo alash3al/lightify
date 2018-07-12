@@ -66,7 +66,6 @@ func main() {
 	}
 
 	cssURLs := regexp.MustCompile(`(url|\@import)\((.*?)\)`)
-
 	forwarder := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		var err error
 
