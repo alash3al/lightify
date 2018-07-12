@@ -92,9 +92,47 @@ func main() {
 
 			w.Body = ioutil.NopCloser(io.MultiReader(bytes.NewBuffer(chunk), w.Body))
 
+			if !strings.Contains(strings.ToLower(http.DetectContentType(chunk)), "text/html") {
+				return nil
+			}
+
 			doc, err := goquery.NewDocumentFromReader(w.Body)
 			if err != nil {
 				return nil
+			}
+
+			if !*flagCombine {
+				doc.Find("link").Each(func(_ int, s *goquery.Selection) {
+					dst := s.AttrOr("href", "")
+					if dst == "" {
+						return
+					}
+					if s.AttrOr("rel", "") != "stylesheet" {
+						return
+					}
+					dst = fixURL(dst, w.Request.Host)
+					u, err := url.Parse(dst)
+					if err != nil {
+						return
+					}
+					if d := fetch(dst); d != "" {
+						for _, val := range cssURLs.FindAllStringSubmatch(d, -1) {
+							newURL := strings.Trim(val[2], `"'`)
+							if !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
+								newURL = "//" + u.Host + path.Join("/", path.Dir(u.Path), newURL) + "?" + u.RawQuery
+							}
+							if val[2] == newURL {
+								continue
+							}
+							if val[1] == "url" {
+								d = strings.Replace(d, "url("+val[2]+")", "url("+newURL+")", -1)
+							} else if val[1] == "@import" {
+								d = strings.Replace(d, "@import("+val[2]+")", "@import("+newURL+")", -1)
+							}
+						}
+						s.ReplaceWithHtml("<style>" + (d) + "</style>")
+					}
+				})
 			}
 
 			scripts := []string{}
@@ -128,42 +166,6 @@ func main() {
 					__lightifingJS(` + (srcs) + `)
 				</script>
 			`)
-
-			if !*flagCombine || !strings.Contains(strings.ToLower(http.DetectContentType(chunk)), "text/html") {
-				return nil
-			}
-
-			doc.Find("link").Each(func(_ int, s *goquery.Selection) {
-				dst := s.AttrOr("href", "")
-				if dst == "" {
-					return
-				}
-				if s.AttrOr("rel", "") != "stylesheet" {
-					return
-				}
-				dst = fixURL(dst, w.Request.Host)
-				u, err := url.Parse(dst)
-				if err != nil {
-					return
-				}
-				if d := fetch(dst); d != "" {
-					for _, val := range cssURLs.FindAllStringSubmatch(d, -1) {
-						newURL := strings.Trim(val[2], `"'`)
-						if !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
-							newURL = "//" + u.Host + path.Join("/", path.Dir(u.Path), newURL) + "?" + u.RawQuery
-						}
-						if val[2] == newURL {
-							continue
-						}
-						if val[1] == "url" {
-							d = strings.Replace(d, "url("+val[2]+")", "url("+newURL+")", -1)
-						} else if val[1] == "@import" {
-							d = strings.Replace(d, "@import("+val[2]+")", "@import("+newURL+")", -1)
-						}
-					}
-					s.ReplaceWithHtml("<style>" + (d) + "</style>")
-				}
-			})
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
