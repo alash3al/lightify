@@ -141,7 +141,7 @@ func main() {
 			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
 				dst := s.AttrOr("src", "")
 				if dst == "" {
-					rawScripts += ";" + s.Text()
+					rawScripts += s.Text() + ";"
 				} else {
 					dst = fixURL(dst, w.Request.Host)
 					scripts = append(scripts, dst)
