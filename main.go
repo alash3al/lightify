@@ -169,7 +169,7 @@ func main() {
 						document.querySelector("body").appendChild(script);
 					}
 				}
-				__lightifingJS(` + (srcs) + `, (function(){return ` + (rawScripts) + `;})());</script>
+				__lightifingJS(` + (srcs) + `, (function(){` + (rawScripts) + `;}));</script>
 			`)
 
 			html, _ := doc.Html()
