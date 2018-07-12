@@ -151,8 +151,8 @@ func main() {
 
 			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
 
-			doc.AppendHtml(`<script defer>function __lightifingJS(e){for(var n in e){var c=e[n],i=document.createElement("script");i.src=c,i.onload=function(){loadScripts(e.slice(n+1))},document.querySelector("body").appendChild(i)}}; __lightifingJS(` + (srcs) + `);</script>`)
-			doc.AppendHtml(`<script defer>` + (rawScripts) + `</script>`)
+			doc.AppendHtml(`<script defer>function __lightifingJS(e,n){if(e.length<1)return(r=document.createElement("script")).innerText=n,void document.querySelector("body").appendChild(r);for(var t in e){var r,c=e[t];(r=document.createElement("script")).src=c,r.onload=function(){loadScripts(e.slice(t+1),n)},document.querySelector("body").appendChild(r)}}; __lightifingJS(` + (srcs) + `);</script>`)
+			// doc.AppendHtml(`<script defer>` + (rawScripts) + `</script>`)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
