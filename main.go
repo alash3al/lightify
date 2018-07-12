@@ -151,8 +151,26 @@ func main() {
 
 			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
 
-			doc.AppendHtml(`<script defer>function __lightifingJS(e,n){if(e.length<1)return(r=document.createElement("script")).innerText=n,void document.querySelector("body").appendChild(r);for(var t in e){var r,c=e[t];(r=document.createElement("script")).src=c,r.onload=function(){loadScripts(e.slice(t+1),n)},document.querySelector("body").appendChild(r)}}; __lightifingJS(` + (srcs) + `, (function(){return ` + (rawScripts) + `;})());</script>`)
-			// doc.AppendHtml(`<script defer>` + (rawScripts) + `</script>`)
+			doc.AppendHtml(`
+				function __lightifingJS(srcs, finalscriptFn) {
+					if ( srcs.length < 1 ) {
+						var script = document.createElement("script");
+						script.innerText = finalscriptFn()
+						document.querySelector("body").appendChild(script)
+						return
+					}
+					for ( var index in srcs ) {
+						var src = srcs[index];
+						var script = document.createElement("script");
+						script.src = src;
+						script.onload = function(){
+							loadScripts(srcs.slice(index+1), raw);
+						};
+						document.querySelector("body").appendChild(script);
+					}
+				}
+				__lightifingJS(` + (srcs) + `, (function(){return ` + (rawScripts) + `;})());</script>
+			`)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
