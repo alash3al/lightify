@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"flag"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -93,12 +92,44 @@ func main() {
 
 			w.Body = ioutil.NopCloser(io.MultiReader(bytes.NewBuffer(chunk), w.Body))
 
-			if !*flagCombine || !strings.Contains(strings.ToLower(http.DetectContentType(chunk)), "text/html") {
+			doc, err := goquery.NewDocumentFromReader(w.Body)
+			if err != nil {
 				return nil
 			}
 
-			doc, err := goquery.NewDocumentFromReader(w.Body)
-			if err != nil {
+			scripts := []string{}
+
+			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
+				dst := s.AttrOr("src", "")
+				if dst == "" {
+					return
+				}
+				dst = fixURL(dst, w.Request.Host)
+				scripts = append(scripts, dst)
+				s.Remove()
+			})
+
+			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
+
+			doc.AppendHtml(`
+				<script>
+					function __lightifingJS(srcs) {
+						for ( var index in srcs ) {
+							var src = srcs[index]
+							var script = document.createElement("script")
+							script.src = src
+							script.onload = function(){
+								loadScripts(srcs.slice(index+1))
+							}
+							document.querySelector("body").appendChild(script)
+						}
+					}
+					
+					__lightifingJS(` + (srcs) + `)
+				</script>
+			`)
+
+			if !*flagCombine || !strings.Contains(strings.ToLower(http.DetectContentType(chunk)), "text/html") {
 				return nil
 			}
 
@@ -133,43 +164,6 @@ func main() {
 					s.ReplaceWithHtml("<style>" + (d) + "</style>")
 				}
 			})
-
-			scripts := []string{}
-
-			doc.Find("script").Each(func(_ int, s *goquery.Selection) {
-				dst := s.AttrOr("src", "")
-				if dst == "" {
-					return
-				}
-				dst = fixURL(dst, w.Request.Host)
-				scripts = append(scripts, dst)
-				s.Remove()
-				// if d := fetch(dst); d != "" {
-				// s.ReplaceWithHtml()
-				// }
-			})
-
-			srcs := `["` + strings.Join(scripts, `", "`) + `"]`
-
-			doc.AppendHtml(`
-				<script>
-					function __lightifingJS(srcs) {
-						for ( var index in srcs ) {
-							var src = srcs[index]
-							var script = document.createElement("script")
-							script.src = src
-							script.onload = function(){
-								loadScripts(srcs.slice(index+1))
-							}
-							document.querySelector("body").appendChild(script)
-						}
-					}
-					
-					__lightifingJS(` + (srcs) + `)
-				</script>
-			`)
-
-			fmt.Println(srcs)
 
 			html, _ := doc.Html()
 			w.Body = ioutil.NopCloser(strings.NewReader(html))
