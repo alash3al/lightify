@@ -29,7 +29,7 @@ import (
 var (
 	flagUpstream = flag.String("upstream", "http://localhost:8080", "the upstream server to fallback")
 	flagHTTPAddr = flag.String("http", ":80", "the http port to listen on")
-	flagMinify   = flag.Bool("minify", true, "minify the assets files on the fly")
+	flagMinify   = flag.String("minify", "js,css,json,xml,html,svg", "the types to be minified, empty means none")
 	flagCombine  = flag.Bool("combine", true, "combine the assets files on the fly")
 	flagGZIP     = flag.Bool("gzip", true, "compress the output")
 	flagLog      = flag.Bool("log", true, "enable logging")
@@ -38,14 +38,32 @@ var (
 func main() {
 	flag.Parse()
 
+	minifiable := strings.Split(*flagMinify, ",")
 	m := minify.New()
 
-	m.AddFunc("text/css", css.Minify)
-	m.AddFunc("text/html", html.Minify)
-	m.AddFunc("text/javascript", js.Minify)
-	m.AddFunc("image/svg+xml", svg.Minify)
-	m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
-	m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
+	if inArray(minifiable, "css") {
+		m.AddFunc("text/css", css.Minify)
+	}
+
+	if inArray(minifiable, "html") {
+		m.AddFunc("text/html", html.Minify)
+	}
+
+	if inArray(minifiable, "js") {
+		m.AddFunc("text/javascript", js.Minify)
+	}
+
+	if inArray(minifiable, "svg") {
+		m.AddFunc("image/svg+xml", svg.Minify)
+	}
+
+	if inArray(minifiable, "xml") {
+		m.AddFuncRegexp(regexp.MustCompile("[/+]xml$"), xml.Minify)
+	}
+
+	if inArray(minifiable, "json") {
+		m.AddFuncRegexp(regexp.MustCompile("[/+]json$"), json.Minify)
+	}
 
 	cssURLs := regexp.MustCompile(`(url|\@import)\((.*?)\)`)
 
@@ -143,7 +161,7 @@ func main() {
 
 	var container http.Handler = forwarder
 
-	if *flagMinify {
+	if *flagMinify != "" {
 		container = m.Middleware(container)
 	}
 
@@ -180,4 +198,13 @@ func fixURL(dst, host string) string {
 		dst = "http://" + host + "/" + strings.TrimLeft(dst, "/")
 	}
 	return dst
+}
+
+func inArray(a []string, s string) bool {
+	for _, v := range a {
+		if s == v {
+			return true
+		}
+	}
+	return false
 }
