@@ -142,17 +142,9 @@ func main() {
 						return
 					}
 					dst = fixURL(dst, w.Request.Host)
-					// u, err := url.Parse(dst)
-					// if err != nil {
-					// 	return
-					// }
-					// if u.Host != w.Request.Host {
-					// 	return
-					// }
 					if d := fetch(dst); d != "" {
 						s.RemoveAttr("src")
 						s.SetText(d)
-						// s.ReplaceWithHtml("<script>" + (d) + "</script>")
 					}
 				})
 			}
