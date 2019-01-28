@@ -84,7 +84,7 @@ func main() {
 		fwd, err := forward.New(forward.PassHostHeader(true), forward.ResponseModifier(func(w *http.Response) (err error) {
 			w.Header.Del("Server")
 			w.Header.Del("X-Powered-By")
-			w.Header.Del("Content-Length")
+			// w.Header.Del("Content-Length")
 
 			if strings.ToLower(w.Header.Get("Content-Encoding")) == "gzip" {
 				w.Body, err = gzip.NewReader(w.Body)
