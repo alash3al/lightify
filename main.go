@@ -46,11 +46,17 @@ func main() {
 	}
 
 	if inArray(minifiable, "html") {
-		m.AddFunc("text/html", html.Minify)
+		m.Add("text/html", &html.Minifier{
+			KeepConditionalComments: true,
+			KeepEndTags:             true,
+			KeepDocumentTags:        true,
+			KeepDefaultAttrVals:     true,
+		})
 	}
 
 	if inArray(minifiable, "js") {
 		m.AddFunc("text/javascript", js.Minify)
+		m.AddFunc("application/javascript", js.Minify)
 	}
 
 	if inArray(minifiable, "svg") {
@@ -195,11 +201,8 @@ func fetch(dst string) string {
 }
 
 func fixURL(dst, host string) string {
-	if strings.HasPrefix(dst, "//") {
-		dst = "http:" + dst
-	}
-	if !strings.HasPrefix(dst, "http://") && !strings.HasPrefix(dst, "https://") {
-		dst = "http://" + host + "/" + strings.TrimLeft(dst, "/")
+	if !strings.HasPrefix(dst, "//") && !strings.HasPrefix(dst, "http://") && !strings.HasPrefix(dst, "https://") {
+		dst = "//" + host + "/" + strings.TrimLeft(dst, "/")
 	}
 	return dst
 }
