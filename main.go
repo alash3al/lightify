@@ -148,6 +148,7 @@ func main() {
 					if dst == "" {
 						return
 					}
+					s.SetAttr("defer", "true")
 					dst = fixURL(dst, w.Request.Host)
 					if d := fetch(dst); d != "" {
 						s.RemoveAttr("src")
