@@ -126,7 +126,7 @@ func main() {
 					if d := fetch(dst); d != "" {
 						for _, val := range cssURLs.FindAllStringSubmatch(d, -1) {
 							newURL := strings.Trim(val[2], `"'`)
-							if !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
+							if !strings.HasPrefix(newURL, "//") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "http://") && !strings.HasPrefix(newURL, "/") && !strings.HasPrefix(newURL, "data:") {
 								newURL = "//" + u.Host + path.Join("/", path.Dir(u.Path), newURL) + "?" + u.RawQuery
 							}
 							if val[2] == newURL {
@@ -148,7 +148,7 @@ func main() {
 					if dst == "" {
 						return
 					}
-					s.SetAttr("defer", "true")
+					// s.SetAttr("async", "true")
 					dst = fixURL(dst, w.Request.Host)
 					if d := fetch(dst); d != "" {
 						s.RemoveAttr("src")
