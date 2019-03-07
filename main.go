@@ -55,8 +55,7 @@ func main() {
 	}
 
 	if inArray(minifiable, "js") {
-		m.AddFunc("text/javascript", js.Minify)
-		m.AddFunc("application/javascript", js.Minify)
+		m.AddFuncRegexp(regexp.MustCompile("^(application|text)/(x-)?(java|ecma)script$"), js.Minify)
 	}
 
 	if inArray(minifiable, "svg") {
